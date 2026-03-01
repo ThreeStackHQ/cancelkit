@@ -94,7 +94,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
+  const stripe = new Stripe(stripeKey, { apiVersion: "2026-02-25.clover" });
 
   try {
     switch (input.offerType) {
@@ -130,7 +130,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         }
 
         const updated = await stripe.subscriptions.update(subscription.id, {
-          coupon: coupon.id,
+          discounts: [{ coupon: coupon.id }],
         });
 
         return NextResponse.json({

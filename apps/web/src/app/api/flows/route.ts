@@ -9,6 +9,8 @@ import {
   desc,
 } from "@cancelkit/db";
 import { z } from "zod";
+import { canCreateFlow, getUserTier } from "@/lib/tier";
+import { PLANS } from "@/lib/stripe";
 
 // ─── Validation Schemas ───────────────────────────────────────────────────────
 
@@ -66,6 +68,22 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   const { name, triggerType, steps } = parsed.data;
+
+  // Enforce plan flow limit
+  const allowed = await canCreateFlow(session.user.id);
+  if (!allowed) {
+    const tier = await getUserTier(session.user.id);
+    const plan = PLANS[tier];
+    return NextResponse.json(
+      {
+        error: "Flow limit reached",
+        message: `Your ${plan.name} plan allows up to ${plan.flowLimit} flow${plan.flowLimit === 1 ? "" : "s"}. Upgrade to create more.`,
+        limit: plan.flowLimit,
+        currentTier: tier,
+      },
+      { status: 403 }
+    );
+  }
 
   // Create flow
   const [newFlow] = await db

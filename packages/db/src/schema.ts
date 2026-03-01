@@ -25,7 +25,7 @@ export const eventTypeEnum = pgEnum("event_type", [
   "answer",
 ]);
 
-export const tierEnum = pgEnum("tier", ["free", "pro", "business"]);
+export const tierEnum = pgEnum("tier", ["free", "indie", "pro"]);
 
 export const triggerTypeEnum = pgEnum("trigger_type", [
   "cancel-button",
