@@ -1,0 +1,22 @@
+{
+  "name": "@cancelkit/db",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.30.10",
+    "postgres": "^3.4.4"
+  },
+  "devDependencies": {
+    "@cancelkit/config": "workspace:*",
+    "drizzle-kit": "^0.21.4",
+    "typescript": "^5.4.5"
+  }
+}
