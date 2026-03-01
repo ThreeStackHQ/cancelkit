@@ -1,15 +1,19 @@
 {
   "name": "@cancelkit/widget",
-  "version": "0.1.0",
-  "private": true,
-  "main": "./src/index.ts",
+  "version": "1.0.0",
+  "description": "Embeddable cancel flow widget for CancelKit",
+  "main": "./dist/cancelkit.js",
   "types": "./src/index.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "rollup -c rollup.config.mjs",
+    "dev": "rollup -c rollup.config.mjs --watch",
     "type-check": "tsc --noEmit"
   },
+  "files": ["dist"],
   "devDependencies": {
     "@cancelkit/config": "workspace:*",
+    "@rollup/plugin-terser": "^0.4.4",
+    "rollup": "^4.12.0",
     "typescript": "^5.4.5"
   }
 }

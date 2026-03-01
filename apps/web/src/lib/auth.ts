@@ -1,11 +1,12 @@
 // @ts-nocheck
-import NextAuth from "next-auth";
+import NextAuth, { type NextAuthConfig } from "next-auth";
+import type { Session } from "next-auth";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db, users, eq } from "@cancelkit/db";
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+const config: NextAuthConfig = {
   adapter: DrizzleAdapter(db),
   session: {
     strategy: "jwt",
@@ -30,11 +31,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async session({ session, token }) {
       if (token["userId"] && typeof token["userId"] === "string") {
-        session.user.id = token["userId"];
+        (session as Session & { user: { id: string } }).user.id =
+          token["userId"] as string;
       }
       return session;
     },
-    async signIn({ user, account }) {
+    async signIn({ user }) {
       if (!user.email) return false;
 
       // Upsert user on first OAuth sign-in
@@ -59,4 +61,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: "/login",
     error: "/login",
   },
-});
+};
+
+const nextAuth = NextAuth(config);
+
+export const handlers = nextAuth.handlers as typeof nextAuth.handlers;
+export const auth = nextAuth.auth as typeof nextAuth.auth;
+export const signIn = nextAuth.signIn as typeof nextAuth.signIn;
+export const signOut = nextAuth.signOut as typeof nextAuth.signOut;
