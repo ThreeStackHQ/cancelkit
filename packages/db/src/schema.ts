@@ -12,19 +12,32 @@ import {
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
 export const stepTypeEnum = pgEnum("step_type", [
-  "survey",
+  "question",
   "offer",
-  "redirect",
+  "confirmation",
 ]);
 
 export const eventTypeEnum = pgEnum("event_type", [
   "impression",
-  "step_completed",
-  "saved",
-  "cancelled",
+  "step_view",
+  "save",
+  "cancel",
+  "answer",
 ]);
 
 export const tierEnum = pgEnum("tier", ["free", "pro", "business"]);
+
+export const triggerTypeEnum = pgEnum("trigger_type", [
+  "cancel-button",
+  "manual",
+]);
+
+export const offerTypeEnum = pgEnum("offer_type", [
+  "discount",
+  "pause",
+  "downgrade",
+  "custom",
+]);
 
 // ─── Users ────────────────────────────────────────────────────────────────────
 
@@ -46,6 +59,7 @@ export const flows = pgTable("flows", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
+  triggerType: triggerTypeEnum("trigger_type").default("cancel-button").notNull(),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
@@ -64,7 +78,11 @@ export const flowSteps = pgTable("flow_steps", {
     .references(() => flows.id, { onDelete: "cascade" }),
   order: integer("order").notNull(),
   type: stepTypeEnum("type").notNull(),
-  config: jsonb("config").notNull().default({}),
+  title: text("title").notNull().default(""),
+  body: text("body").default(""),
+  options: jsonb("options").default([]), // for question steps: [{label, value}]
+  offerType: offerTypeEnum("offer_type"), // for offer steps
+  offerValue: text("offer_value"), // discount %, pause duration, price_id
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -80,10 +98,28 @@ export const flowEvents = pgTable("flow_events", {
   stepId: uuid("step_id").references(() => flowSteps.id, {
     onDelete: "set null",
   }),
+  customerId: text("customer_id"), // end-user/Stripe customer identifier
   eventType: eventTypeEnum("event_type").notNull(),
-  endUserId: text("end_user_id"),
   metadata: jsonb("metadata").default({}),
   createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+// ─── Workspace Settings ───────────────────────────────────────────────────────
+
+export const workspaceSettings = pgTable("workspace_settings", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .unique()
+    .references(() => users.id, { onDelete: "cascade" }),
+  // AES-256-GCM encrypted Stripe secret key: "iv:authTag:ciphertext" (hex)
+  stripeSecretKeyEncrypted: text("stripe_secret_key_encrypted"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
 });
@@ -121,6 +157,9 @@ export type NewFlowStep = typeof flowSteps.$inferInsert;
 
 export type FlowEvent = typeof flowEvents.$inferSelect;
 export type NewFlowEvent = typeof flowEvents.$inferInsert;
+
+export type WorkspaceSettings = typeof workspaceSettings.$inferSelect;
+export type NewWorkspaceSettings = typeof workspaceSettings.$inferInsert;
 
 export type Subscription = typeof subscriptions.$inferSelect;
 export type NewSubscription = typeof subscriptions.$inferInsert;
